@@ -1,16 +1,14 @@
 package BGUpdate;
 
-import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
-import java.awt.image.BufferedImage;
 
 public class ImagePanel extends JPanel {
 
-    Image image;
-    JLabel frame;
+    private Image image;
+    private JLabel frame;
 
-    public ImagePanel(){
+    ImagePanel(){
 
         super();
         frame = new JLabel("No image");
@@ -34,7 +32,7 @@ public class ImagePanel extends JPanel {
         */
     }
 
-    public void addImage(Image image){
+    void addImage(Image image){
 
         this.image = image;
         int originalHeight = this.image.getHeight(null);

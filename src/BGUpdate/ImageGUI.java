@@ -1,28 +1,30 @@
 package BGUpdate;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 import javax.imageio.IIOException;
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
-import java.nio.file.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.Objects;
 
-public class ImageGUI {
+class ImageGUI {
 
     private JFrame mainFrame;
     private ImagePanel pictureFrame;
-    private String currentIMGPath;
     private String currentIMGName;
     private String currentIMGext;
 
@@ -77,139 +79,135 @@ public class ImageGUI {
 
         //listeners
 
-        addBoard.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                board.addItem(JOptionPane.showInputDialog("Enter board with / (e.g. /wg/) : "));
+        addBoard.addActionListener(e -> board.addItem(JOptionPane.showInputDialog("Enter board with / (e.g. /wg/) : ")));
+
+        setBackground.addActionListener(e -> {
+
+            try {
+
+                String cmd= "./changeBG.sh" + currentIMGext;
+                System.out.println(cmd);
+                ProcessBuilder bd = new ProcessBuilder("./changeBG.sh", currentIMGext);
+
+                Process ps = bd.start();
+                BufferedReader br = new BufferedReader(new InputStreamReader(ps.getInputStream()));
+                String currentLine;
+
+                while (true) {
+                    currentLine = br.readLine();
+                    if (currentLine == null) {
+                        break;
+                    }
+                    System.out.println(currentLine);
+                }
+
+            } catch (IOException ioex){
+                JOptionPane.showMessageDialog(pictureFrame, "Please that changeBG.sh is in the same directory as the jar and is executable.");
+            }
+            catch (Exception e2){
+                e2.printStackTrace();
             }
         });
 
-        setBackground.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
+        saveImage.addActionListener(e -> {
+            JFileChooser fc = new JFileChooser();
 
+            fc.setCurrentDirectory(new File("./"));
+            int retrieval = fc.showSaveDialog(mainFrame);
+
+            if (retrieval == JFileChooser.APPROVE_OPTION) {
                 try {
 
-                    String cmd= "./changeBG.sh \"" + currentIMGext + "\"" ;
-                    System.out.println(cmd);
-                    ProcessBuilder bd = new ProcessBuilder(cmd.split(" "));
+                    Path in = Paths.get("./images/newimage." + currentIMGext);
+                    Path out = Paths.get(fc.getSelectedFile().getAbsolutePath() + "." + currentIMGext);
 
-                    Process ps = bd.start();
-                    BufferedReader br = new BufferedReader(new InputStreamReader(ps.getInputStream()));
-                    String currentLine;
+                    Files.copy(in, out, StandardCopyOption.REPLACE_EXISTING);
 
-                    while (true) {
-                        currentLine = br.readLine();
-                        if (currentLine == null) {
-                            break;
-                        }
-                        System.out.println(currentLine);
-                    }
-
-                } catch (Exception e2){
-                    e2.printStackTrace();
+                } catch (Exception e1) {
+                    e1.printStackTrace();
                 }
             }
         });
 
-        saveImage.addActionListener(new ActionListener() {
+        getImage.addActionListener(e -> {
 
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                JFileChooser fc = new JFileChooser();
+            Path newP = Paths.get("./images");
+            try {
+                Files.createDirectory(newP);
+            } catch (Exception ignored){
+            }
 
-                fc.setCurrentDirectory(new File("./"));
-                //fc.setSelectedFile(new File("./newimage." + currentIMGext));
-                int retrival = fc.showSaveDialog(mainFrame);
+            JSONArray allThreads;
+            JSONObject allImages;
+            ArrayList<String> threadNumsList = new ArrayList<>();
+            ArrayList<String> imageNumbersList = new ArrayList<>();
+            ArrayList<String> imageExtensionsList = new ArrayList<>();
+            String ext;
 
-                if (retrival == JFileChooser.APPROVE_OPTION) {
+
+
+            try {
+
+                //get and add all thread numbers on a board to array
+                allThreads = ImagePull.sendGET(Objects.requireNonNull(board.getSelectedItem()).toString());
+                for (int i = 0; i < allThreads.length(); i++)
+                {
+                    JSONObject allThreadsJSONObject = allThreads.getJSONObject(i);
+                    JSONArray threadArr = allThreadsJSONObject.getJSONArray("threads");
+                    for(int j = 0; j < threadArr.length(); j++){
+                        JSONObject currentThread = threadArr.getJSONObject(j);
+                        threadNumsList.add(currentThread.get("no").toString());
+                    }
+                }
+
+                //shuffle all threads to pick random one
+                Collections.shuffle(threadNumsList);
+
+                //get all image numbers from a given thread
+
+                allImages = ImagePull.sendGETURL(threadNumsList.get(0), board.getSelectedItem().toString());
+                JSONArray currentPosts = allImages.getJSONArray("posts");
+
+                for(int i = 0; i < currentPosts.length(); i++){
+
+                    //if a given reply doesn't contain an image, move on
                     try {
-
-                        Path in = Paths.get("./images/newimage." + currentIMGext);
-                        Path out = Paths.get(fc.getSelectedFile().getAbsolutePath() + "." + currentIMGext);
-
-                        Files.copy(in, out, StandardCopyOption.REPLACE_EXISTING);
-
-                    } catch (Exception e1) {
-                        e1.printStackTrace();
+                        if (currentPosts.getJSONObject(i).get("tim") != null) {
+                            imageNumbersList.add(currentPosts.getJSONObject(i).get("tim").toString());
+                            imageExtensionsList.add(currentPosts.getJSONObject(i).getString("ext"));
+                        }
+                    } catch (JSONException ignored){
                     }
                 }
-            }
-        });
 
-        getImage.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
+                if(!imageNumbersList.isEmpty()){
 
-                Path newP = Paths.get("./images");
-                try {
-                    Files.createDirectory(newP);
-                } catch (FileAlreadyExistsException fae) {
-                } catch (IOException ioe) {
-                }
-
-                String allThreads;
-                String allImages;
-                ArrayList<String> threadNumsList = new ArrayList<>();
-                ArrayList<String> imageNumbersList = new ArrayList<>();
-                ArrayList<String> imageExtensionsList = new ArrayList<>();
-                Matcher matcher;
-                Matcher matcherExt;
-                Pattern pattern = Pattern.compile("\\d\\d\\d\\d\\d\\d\\d\\d\\d\\d\\d\\d\\d");
-                Pattern patternExt = Pattern.compile("jpg|png|bmp");
-                String ext = "";
-
-                try {
-
-                    allThreads = ImagePull.sendGET(board.getSelectedItem().toString());
-
-                    //System.out.println(allThreads);
-
-                    allThreads = (allThreads.replaceAll("[a-zA-Z{}:,]", ""));
-                    allThreads = (allThreads.replaceAll("[\"]", " "));
-                    allThreads = (allThreads.replaceAll("[]_\\[]", ""));
-                    allThreads = (allThreads.replaceAll("[\\s]+", " "));
-
-                    String[] threadNums = allThreads.split(" ");
-                    for(int i = 0; i < threadNums.length; i++){
-                        if(threadNums[i].length() == 7){threadNumsList.add(threadNums[i]);}
-                    };
-                    Collections.shuffle(threadNumsList);
-
-                    //System.out.println(threadNumsList.get(0));
-
-                    allImages = ImagePull.sendGETURL(threadNumsList.get(0), board.getSelectedItem().toString());
-
-                    matcher = pattern.matcher(allImages);
-                    matcherExt = patternExt.matcher(allImages);
-
-                    while(matcher.find() && matcherExt.find()){
-                        imageNumbersList.add(allImages.substring(matcher.start(), matcher.end()));
-                        imageExtensionsList.add(allImages.substring(matcherExt.start(), matcherExt.end()));
-                    }
-
+                    //pick image at random
                     int index = (int) Math.ceil(Math.random() * imageNumbersList.size()) - 1;
 
-                    ImagePull.saveIMG(imageNumbersList.get(index), board.getSelectedItem().toString(), imageExtensionsList.get(index));
+                    //get the selected image on to disk
+                    ImagePull.saveIMG(imageNumbersList.get(index), board.getSelectedItem().toString(), imageExtensionsList.get(index).substring(1));
 
-                    currentIMGName += imageNumbersList.get(index);
-                    currentIMGName += imageExtensionsList.get(index);
-
-                    ext = imageExtensionsList.get(index);
-
+                    currentIMGName = imageNumbersList.get(index);
+                    ext = imageExtensionsList.get(index).substring(1);
                     currentIMGext = ext;
 
-                    URL url = new URL("https://i.4cdn.org" + board.getSelectedItem().toString() + imageNumbersList.get(index) + "." + imageExtensionsList.get(index));
+                    //display selected image
+                    URL url = new URL("https://i.4cdn.org" + board.getSelectedItem().toString() + currentIMGName + "." + currentIMGext);
                     addImage(ImageIO.read(url), dimensions, format);
 
-                } catch (IIOException iio) {
-                    //iio.printStackTrace();
-                    JOptionPane.showMessageDialog(pictureFrame, "This image seems to no longer exist.");
-                } catch (Exception any){
-                    any.printStackTrace();
+                } else {
+                    JOptionPane.showMessageDialog(pictureFrame, "Unlucky, you hit a thread with no images!");
                 }
 
+
+
+            } catch (IIOException iio) {
+                JOptionPane.showMessageDialog(pictureFrame, "This image seems to no longer exist.");
+            } catch (Exception any){
+                any.printStackTrace();
             }
+
         });
 
         mainFrame.setLocationRelativeTo(null);
@@ -218,10 +216,10 @@ public class ImageGUI {
 
     }
 
-    public void addImage(BufferedImage image, JLabel dimensions, JLabel extention){
+    private void addImage(BufferedImage image, JLabel dimensions, JLabel extension){
 
         dimensions.setText(image.getWidth() + " x " + image.getHeight());
-        extention.setText(currentIMGext);
+        extension.setText(currentIMGext);
         pictureFrame.addImage(image);
         pictureFrame.repaint();
         pictureFrame.revalidate();

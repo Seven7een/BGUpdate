@@ -1,19 +1,19 @@
 package BGUpdate;
 
-import javax.imageio.ImageIO;
-import java.awt.*;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 
-import java.net.HttpURLConnection;
-import java.nio.file.*;
+class ImagePull{
 
-public class ImagePull{
-
-    static String sendGET(String board) throws Exception{
+    static JSONArray sendGET(String board) throws Exception{
         String returnString = "";
 
         HttpURLConnection.setFollowRedirects(true); // defaults to true
@@ -45,10 +45,10 @@ public class ImagePull{
                 System.out.println("Big yikes");
             }
         }
-        return returnString;
+        return (new JSONArray(returnString));
     }
 
-    static String sendGETURL(String inURL, String board) throws Exception{
+    static JSONObject sendGETURL(String inURL, String board) throws Exception{
         String returnString = "";
 
         HttpURLConnection.setFollowRedirects(true); // defaults to true
@@ -80,11 +80,10 @@ public class ImagePull{
                 System.out.println("Lesser yikes");
             }
         }
-        return returnString;
+        return (new JSONObject(returnString));
     }
 
-    static String saveIMG(String inURL, String board, String ext) throws Exception{
-        String returnString = "";
+    static void saveIMG(String inURL, String board, String ext) throws Exception{
 
         HttpURLConnection.setFollowRedirects(true); // defaults to true
 
@@ -105,7 +104,6 @@ public class ImagePull{
                 e.printStackTrace();
             }
         }
-        return returnString;
     }
 
 
