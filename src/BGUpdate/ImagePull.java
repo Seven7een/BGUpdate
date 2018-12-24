@@ -1,3 +1,5 @@
+package BGUpdate;
+
 import javax.imageio.ImageIO;
 import java.awt.*;
 import java.io.BufferedReader;
@@ -11,12 +13,12 @@ import java.nio.file.*;
 
 public class ImagePull{
 
-    static String sendGET() throws Exception{
+    static String sendGET(String board) throws Exception{
         String returnString = "";
 
         HttpURLConnection.setFollowRedirects(true); // defaults to true
 
-        String url = "https://a.4cdn.org/wg/threads.json";
+        String url = "https://a.4cdn.org" + board + "threads.json";
         URL request_url = new URL(url);
         HttpURLConnection http_conn = (HttpURLConnection)request_url.openConnection();
         http_conn.setConnectTimeout(100000);
@@ -46,12 +48,12 @@ public class ImagePull{
         return returnString;
     }
 
-    static String sendGETURL(String inURL) throws Exception{
+    static String sendGETURL(String inURL, String board) throws Exception{
         String returnString = "";
 
         HttpURLConnection.setFollowRedirects(true); // defaults to true
 
-        String url = "https://a.4cdn.org/wg/thread/" + inURL + ".json";
+        String url = "https://a.4cdn.org" + board + "thread/" + inURL + ".json";
         URL request_url = new URL(url);
         HttpURLConnection http_conn = (HttpURLConnection)request_url.openConnection();
         http_conn.setConnectTimeout(100000);
@@ -81,12 +83,12 @@ public class ImagePull{
         return returnString;
     }
 
-    static String saveIMG(String inURL, String ext) throws Exception{
+    static String saveIMG(String inURL, String board, String ext) throws Exception{
         String returnString = "";
 
         HttpURLConnection.setFollowRedirects(true); // defaults to true
 
-        String url = "https://i.4cdn.org/wg/" + inURL + "." + ext;
+        String url = "https://i.4cdn.org" + board + inURL + "." + ext;
         URL request_url = new URL(url);
         HttpURLConnection http_conn = (HttpURLConnection)request_url.openConnection();
         http_conn.setConnectTimeout(100000);
@@ -97,7 +99,7 @@ public class ImagePull{
         if(response.equals("OK")) {
             try {
                 InputStream in = http_conn.getInputStream();
-                Files.copy(in, Paths.get("C:\\Memefolder\\newimage." + ext), StandardCopyOption.REPLACE_EXISTING);
+                Files.copy(in, Paths.get("./images/newimage." + ext), StandardCopyOption.REPLACE_EXISTING);
 
             } catch (Exception e) {
                 e.printStackTrace();
