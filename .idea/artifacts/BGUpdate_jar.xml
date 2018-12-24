@@ -1,0 +1,8 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="BGUpdate:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/BGUpdate_jar</output-path>
+    <root id="archive" name="BGUpdate.jar">
+      <element id="module-output" name="BGUpdate" />
+    </root>
+  </artifact>
+</component>

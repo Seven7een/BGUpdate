@@ -1,3 +1,3 @@
 Manifest-Version: 1.0
-BGUpdate.Main-Class: BGUpdate.Main
+Main-Class: BGUpdate.Main
 
