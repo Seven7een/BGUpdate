@@ -194,6 +194,7 @@ class ImageGUI {
 
                     //display selected image
                     URL url = new URL("https://i.4cdn.org" + board.getSelectedItem().toString() + currentIMGName + "." + currentIMGext);
+                    pictureFrame.setThreadURL("http://boards.4channel.org" + board.getSelectedItem().toString() + "thread/" + threadNumsList.get(0));
                     addImage(ImageIO.read(url), dimensions, format);
 
                 } else {
