@@ -79,4 +79,5 @@ public class ImagePanel extends JPanel {
     Image getImage(){
         return image;
     }
+
 }
