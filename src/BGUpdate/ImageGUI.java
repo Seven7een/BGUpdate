@@ -6,6 +6,7 @@ import org.json.JSONObject;
 import javax.imageio.IIOException;
 import javax.imageio.ImageIO;
 import javax.swing.*;
+import javax.swing.border.Border;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
@@ -27,6 +28,7 @@ class ImageGUI {
     private ImagePanel pictureFrame;
     private String currentIMGName;
     private String currentIMGext;
+    GalleryPanel[] historyPanels;
 
     ImageGUI(){
 
@@ -50,6 +52,7 @@ class ImageGUI {
 
         board.addItem("/wg/");
         board.addItem("/hr/");
+        board.addItem("/w/");
 
         JButton addBoard = new JButton("Add board");
 
@@ -75,7 +78,26 @@ class ImageGUI {
 
         contentPane.add(options, BorderLayout.NORTH);
         contentPane.add(pictureFrame, BorderLayout.CENTER);
-        contentPane.add(imageInfo, BorderLayout.SOUTH);
+
+        historyPanels = new GalleryPanel[3];
+
+        Container bottomPanel = new Container();
+        bottomPanel.setLayout(new BorderLayout());
+
+        Container gallery = new Container();
+        gallery.setLayout(new GridLayout(1, 3));
+
+        for(int i = 0; i < 3; i++){
+            historyPanels[i] = new GalleryPanel();
+            //historyPanels[i].adjustSize((int) (mainFrame.getWidth() / 3.5), (int)(mainFrame.getHeight() / 3.5));
+            gallery.add(historyPanels[i]);
+        }
+
+        bottomPanel.add(gallery, BorderLayout.SOUTH);
+        bottomPanel.add(imageInfo, BorderLayout.NORTH);
+
+        contentPane.add(bottomPanel, BorderLayout.SOUTH);
+
 
         //listeners
 
@@ -193,9 +215,12 @@ class ImageGUI {
                     currentIMGext = ext;
 
                     //display selected image
-                    URL url = new URL("https://i.4cdn.org" + board.getSelectedItem().toString() + currentIMGName + "." + currentIMGext);
+                    String urlString = "https://i.4cdn.org" + board.getSelectedItem().toString() + currentIMGName + "." + currentIMGext;
+                    URL url = new URL(urlString);
                     pictureFrame.setThreadURL("http://boards.4channel.org" + board.getSelectedItem().toString() + "thread/" + threadNumsList.get(0));
                     addImage(ImageIO.read(url), dimensions, format);
+                    saveToGallery(ImageIO.read(url), urlString);
+
 
                 } else {
                     JOptionPane.showMessageDialog(pictureFrame, "Unlucky, you hit a thread with no images!");
@@ -224,6 +249,42 @@ class ImageGUI {
         pictureFrame.addImage(image);
         pictureFrame.repaint();
         pictureFrame.revalidate();
+    }
+
+    public void addGalleryImage(BufferedImage image, GalleryPanel panel){
+
+        panel.addImage(image);
+        panel.revalidate();
+        panel.repaint();
+
+    }
+
+    private void saveToGallery(BufferedImage image, String url){
+
+        int successful = 0;
+
+        for(int i = 0; i < 3; i++){
+            if(historyPanels[i].getThreadURL() == null){
+                addGalleryImage(image, historyPanels[i]);
+                historyPanels[i].setThreadURL(url);
+                successful = 1;
+                break;
+            }
+        }
+
+        if(successful == 0){
+            historyPanels[0].addImage(historyPanels[1].getImage());
+            historyPanels[0].setThreadURL(historyPanels[1].getThreadURL());
+
+            historyPanels[1].addImage(historyPanels[2].getImage());
+            historyPanels[1].setThreadURL(historyPanels[2].getThreadURL());
+
+            historyPanels[2].addImage(image);
+            historyPanels[2].setThreadURL(url);
+
+
+        }
+
     }
 
 }

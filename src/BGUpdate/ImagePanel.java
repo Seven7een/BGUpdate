@@ -71,4 +71,12 @@ public class ImagePanel extends JPanel {
     public void setThreadURL(String threadURL) {
         this.threadURL = threadURL;
     }
+
+    String getThreadURL(){
+        return threadURL;
+    }
+
+    Image getImage(){
+        return image;
+    }
 }
